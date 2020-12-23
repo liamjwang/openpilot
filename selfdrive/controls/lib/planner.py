@@ -30,12 +30,12 @@ _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 0.65, .4]
 _A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.] # someone seems to think this is kph, but isn't this in m/s? (6.4kph ~ 4mph)
 
 # lookup tables VS speed to determine min and max jerk in cruise
-_J_CRUISE_MIN_V = [-.8, -.7, -.4, -.2, -.2]
+_J_CRUISE_MIN_V = [-.8, -.6, -.2, -.1, -.1]
 _J_CRUISE_MIN_BP = [  0.,  5.,  10., 20.,  40.]
 
 # need fast jerk at very low speed for stop and go
-_J_CRUISE_MAX_V = [.8, .7, .4, .2, .2] # slow at first for safety
-_J_CRUISE_MAX_V_FOLLOWING = [1.0, 1.1, .4, .2, .2]
+_J_CRUISE_MAX_V = [.8, .6, .2, .1, .1] # slow at first for safety
+_J_CRUISE_MAX_V_FOLLOWING = [.9, .7, .2, .2, .2]
 _J_CRUISE_MAX_BP = [ 0.,  5.,  10., 20.,  40.]
 
 # Lookup table for turns
