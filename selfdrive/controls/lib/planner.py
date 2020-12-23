@@ -30,13 +30,10 @@ _A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 0.65, .4]
 _A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.] # someone seems to think this is kph, but isn't this in m/s? (6.4kph ~ 4mph)
 
 # lookup tables VS speed to determine min and max jerk in cruise
-_J_CRUISE_MIN_V = [-.8, -.6, -.2, -.1, -.1]
-_J_CRUISE_MIN_BP = [  0.,  5.,  10., 20.,  40.]
-
 # need fast jerk at very low speed for stop and go
-_J_CRUISE_MAX_V = [.8, .6, .2, .1, .1] # slow at first for safety
-_J_CRUISE_MAX_V_FOLLOWING = [.9, .7, .2, .2, .2]
-_J_CRUISE_MAX_BP = [ 0.,  5.,  10., 20.,  40.]
+_J_CRUISE_MAX_V = [.4, .8, .6, .2, .1, .1] # slow at first for safety
+_J_CRUISE_MAX_V_FOLLOWING = [.4, .9, .7, .3, .2, .2]
+_J_CRUISE_MAX_BP = [ 0., 2.,  5.,  10., 20.,  40.]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -53,13 +50,11 @@ def calc_cruise_accel_limits(v_ego, following):
   return [a_cruise_min, a_cruise_max]
 
 def calc_cruise_jerk_limits(v_ego, following):
-  j_cruise_min = interp(v_ego, _J_CRUISE_MIN_BP, _J_CRUISE_MIN_V)
-
   if following:
     j_cruise_max = interp(v_ego, _J_CRUISE_MAX_BP, _J_CRUISE_MAX_V_FOLLOWING)
   else:
     j_cruise_max = interp(v_ego, _J_CRUISE_MAX_BP, _J_CRUISE_MAX_V)
-  return [j_cruise_min, j_cruise_max]
+  return [-j_cruise_max, j_cruise_max]
 
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
