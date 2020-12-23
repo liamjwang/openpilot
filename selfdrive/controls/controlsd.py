@@ -420,7 +420,8 @@ class Controls:
     CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = self.enabled
     CC.hudControl.lanesVisible = self.enabled
-    CC.hudControl.leadVisible = self.sm['plan'].hasLead
+    # CC.hudControl.leadVisible = self.sm['plan'].hasLead
+    CC.hudControl.leadVisible = self.sm['plan'].longitudinalPlanSource != 'cruise'
 
     right_lane_visible = self.sm['pathPlan'].rProb > 0.5
     left_lane_visible = self.sm['pathPlan'].lProb > 0.5
