@@ -135,6 +135,11 @@ class Planner():
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
+    self.lastPrintTime = 0
+    if round(cur_time) != self.lastPrintTime:
+      print(f"{cur_time:10.1f} smooth-long v_ego:{v_ego:7.1f} lead_1_velocity:{lead_1.vLeadK:7.1f}")
+      self.lastPrintTime = round(cur_time)
+
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
       accel_limits = calc_cruise_accel_limits(v_ego, following)
