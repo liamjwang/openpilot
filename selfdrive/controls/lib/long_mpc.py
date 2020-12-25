@@ -8,7 +8,8 @@ from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 from selfdrive.controls.lib.longitudinal_mpc import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 
-LOG_MPC = os.environ.get('LOG_MPC', False)
+LOG_MPC = True
+# LOG_MPC = os.environ.get('LOG_MPC', False)
 
 
 class LongitudinalMpc():
