@@ -31,7 +31,7 @@ _A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.] # someone seems to think this is kph, b
 
 # lookup tables VS speed to determine min and max jerk in cruise
 # need fast jerk at very low speed for stop and go
-_J_CRUISE_MAX_V = [.6, .8, .6, .2, .1, .1] # slow at first for safety
+_J_CRUISE_MAX_V = [.6, .8, .6, .3, .2, .2]  # slow at first for safety
 _J_CRUISE_MAX_V_FOLLOWING = [.7, .9, .7, .3, .2, .2]
 _J_CRUISE_MAX_BP = [ 0., 2.,  5.,  10., 20.,  40.]
 
@@ -94,16 +94,17 @@ class Planner():
     self.first_loop = True
 
   def choose_solution(self, v_cruise_setpoint, enabled):
+    solutions = {'cruise': self.v_cruise}
+    if self.mpc1.prev_lead_status:
+      solutions['mpc1'] = self.mpc1.v_mpc
+    if self.mpc2.prev_lead_status:
+      solutions['mpc2'] = self.mpc2.v_mpc
+
+    slowest = min(solutions, key=solutions.get)
+
+    self.longitudinalPlanSource = slowest
+
     if enabled:
-      solutions = {'cruise': self.v_cruise}
-      if self.mpc1.prev_lead_status:
-        solutions['mpc1'] = self.mpc1.v_mpc
-      if self.mpc2.prev_lead_status:
-        solutions['mpc2'] = self.mpc2.v_mpc
-
-      slowest = min(solutions, key=solutions.get)
-
-      self.longitudinalPlanSource = slowest
       # Choose lowest of MPC and cruise
       if slowest == 'mpc1':
         self.v_acc = self.mpc1.v_mpc
