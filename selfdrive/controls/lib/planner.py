@@ -231,9 +231,9 @@ class Planner():
 
     pm.send('plan', plan_send)
 
-    orbslamCorrection = messaging.new_message('orbslamCorrection')
-    orbslamCorrection.prePositionECEF = [float(self.v_acc)]
-    pm.send('orbslamCorrection', orbslamCorrection)
+    testJoystick_send = messaging.new_message('testJoystick')
+    testJoystick_send.testJoystick.axes = list([float(self.v_acc)])
+    pm.send('testJoystick', testJoystick_send)
 
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
