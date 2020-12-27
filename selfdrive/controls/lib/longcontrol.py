@@ -66,7 +66,7 @@ class LongControl():
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, v_target, v_target_future, a_target, CP):
+  def update(self, active, CS, v_target, v_target_future, a_target, CP, pm=None, messaging=None):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
     gas_max = interp(CS.vEgo, CP.gasMaxBP, CP.gasMaxV)
@@ -114,6 +114,11 @@ class LongControl():
       if output_gb < -0.2:
         output_gb += CP.startingBrakeRate / RATE
       self.reset(CS.vEgo)
+
+    if pm is not None and messaging is not None:
+      testJoystick_send = messaging.new_message('testJoystick')
+      testJoystick_send.testJoystick.axes = list([float(0.0), float(self.pid.p), float(self.pid.i)])
+      pm.send('testJoystick', testJoystick_send)
 
     self.last_output_gb = output_gb
     final_gas = clip(output_gb, 0., gas_max)
