@@ -231,6 +231,11 @@ class Planner():
 
     pm.send('plan', plan_send)
 
+    orbslamCorrection = messaging.new_message('orbslamCorrection')
+    orbslamCorrection.prePositionECEF = [float(self.v_acc)]
+    pm.send('orbslamCorrection', orbslamCorrection)
+
+
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_acc_sol = self.a_acc_start + (CP.radarTimeStep / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)
     v_acc_sol = self.v_acc_start + CP.radarTimeStep * (a_acc_sol + self.a_acc_start) / 2.0
