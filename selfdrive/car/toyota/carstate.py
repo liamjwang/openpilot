@@ -106,6 +106,9 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in TSS2_CAR:
       ret.leftBlindspot = (cp.vl["BSM"]['L_ADJACENT'] == 1) or (cp.vl["BSM"]['L_APPROACHING'] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]['R_ADJACENT'] == 1) or (cp.vl["BSM"]['R_APPROACHING'] == 1)
+    elif self.CP.carFingerprint == CAR.RAV4H:
+      print('rav4h')
+    print(cp.vl)
 
     return ret
 
