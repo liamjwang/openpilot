@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from common.numpy_fast import clip, interp
 
 def apply_deadzone(error, deadzone):
@@ -9,6 +10,17 @@ def apply_deadzone(error, deadzone):
   else:
     error = 0.
   return error
+
+def apply_hyp_deadzone(error, deadzone):
+    return math.copysign(math.sqrt(deadzone ** 2 + error ** 2) - deadzone, error)
+
+def apply_circ_deadzone(error, deadzone):
+    absError = abs(error)
+    ret = absError - deadzone
+    if absError < deadzone*(math.sqrt(2)/2 + 1):
+        b = deadzone*(2/math.sqrt(2) + 1)
+        ret = -math.sqrt(b ** 2 - absError ** 2) + b
+    return math.copysign(ret, error)
 
 class PIController():
   def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
@@ -58,7 +70,7 @@ class PIController():
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
 
-    error = float(apply_deadzone(setpoint - measurement, deadzone))
+    error = float(apply_circ_deadzone(setpoint - measurement, deadzone))
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
 
