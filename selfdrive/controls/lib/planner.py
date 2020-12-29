@@ -80,7 +80,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def calc_curve_max_speed(v_cruise_setpoint, d_poly): # credit to stock additions
+def calc_curve_max_speed(v_cruise_setpoint, d_poly, pm): # credit to stock additions
   # Radius of curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
   x = _CURVE_SLOWDOWN_LOOKAHEAD
   y_p = 3 * d_poly[0] * x ** 2 + 2 * d_poly[1] * x + d_poly[2]
@@ -94,7 +94,12 @@ def calc_curve_max_speed(v_cruise_setpoint, d_poly): # credit to stock additions
   # Centripetal acceleration = v^2/r
   v_max = math.sqrt(a_y_max * radius)
 
-  return v_max, radius, a_y_max
+  if pm is not None and messaging is not None:
+    testJoystick_send = messaging.new_message('testJoystick')
+    testJoystick_send.testJoystick.axes = list([float(0.0), float(radius), float(a_y_max)])
+    pm.send('testJoystick', testJoystick_send)
+
+  return v_max
 
 
 class Planner():
@@ -169,13 +174,8 @@ class Planner():
     #   print(f"{cur_time:10.1f} smooth-long v_ego:{v_ego:7.1f} lead_1_velocity:{lead_1.vLeadK:7.1f}")
     #   self.lastPrintTime = round(printTime)
 
-    curve_max_speed, radius, a_y_max = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly)
+    curve_max_speed = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly, pm)
     v_cruise_setpoint = np.clip(curve_max_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
-
-    if pm is not None and messaging is not None:
-      testJoystick_send = messaging.new_message('testJoystick')
-      testJoystick_send.testJoystick.axes = list([float(curve_max_speed), float(radius), float(a_y_max)])
-      pm.send('testJoystick', testJoystick_send)
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
