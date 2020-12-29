@@ -115,10 +115,10 @@ class LongControl():
         output_gb += CP.startingBrakeRate / RATE
       self.reset(CS.vEgo)
 
-    if pm is not None and messaging is not None:
-      testJoystick_send = messaging.new_message('testJoystick')
-      testJoystick_send.testJoystick.axes = list([float(0.0), float(self.pid.p), float(self.pid.i)])
-      pm.send('testJoystick', testJoystick_send)
+    # if pm is not None and messaging is not None:
+    #   testJoystick_send = messaging.new_message('testJoystick')
+    #   testJoystick_send.testJoystick.axes = list([float(0.0), float(self.pid.p), float(self.pid.i)])
+    #   pm.send('testJoystick', testJoystick_send)
 
     self.last_output_gb = output_gb
     final_gas = clip(output_gb, 0., gas_max)

@@ -48,7 +48,9 @@ class Controls:
     self.pm = pm
     if self.pm is None:
       self.pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState',
-                                     'carControl', 'carEvents', 'carParams', 'testJoystick'])
+                                     'carControl', 'carEvents', 'carParams'
+                                      # , 'testJoystick'
+                                     ])
 
     self.sm = sm
     if self.sm is None:

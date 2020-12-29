@@ -80,7 +80,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def calc_curve_max_speed(v_ego, d_poly): # credit to stock additions
+def calc_curve_max_speed(v_cruise_setpoint, d_poly): # credit to stock additions
   # Radius of curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
   x = _CURVE_SLOWDOWN_LOOKAHEAD
   y_p = 3 * d_poly[0] * x ** 2 + 2 * d_poly[1] * x + d_poly[2]
@@ -89,10 +89,12 @@ def calc_curve_max_speed(v_ego, d_poly): # credit to stock additions
     return V_CRUISE_MAX
   radius = abs((1. + y_p ** 2) ** 1.5 / y_pp)
 
-  a_y_max = interp(v_ego, _A_Y_MAX_BP, _A_Y_MAX_V)
+  a_y_max = interp(v_cruise_setpoint, _A_Y_MAX_BP, _A_Y_MAX_V)
 
   # Centripetal acceleration = v^2/r
-  return math.sqrt(a_y_max*radius)
+  v_max = math.sqrt(a_y_max * radius)
+
+  return v_max, radius, a_y_max
 
 
 class Planner():
@@ -178,7 +180,13 @@ class Planner():
         accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
         accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
 
-      v_cruise_setpoint = np.clip(calc_curve_max_speed(v_ego, PP.LP.d_poly), v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
+      curve_max_speed, radius, a_y_max = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly)
+      v_cruise_setpoint = np.clip(curve_max_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
+
+      if pm is not None and messaging is not None:
+        testJoystick_send = messaging.new_message('testJoystick')
+        testJoystick_send.testJoystick.axes = list([float(curve_max_speed), float(radius), float(a_y_max)])
+        pm.send('testJoystick', testJoystick_send)
 
       self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                     v_cruise_setpoint,
