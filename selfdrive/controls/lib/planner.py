@@ -39,6 +39,16 @@ _J_CRUISE_MAX_BP = [ 0., 2.,  5.,  10., 20.,  40.]
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
+# Maximum slowdown for curves
+_V_MAX_CURVE_SLOWDOWN = 2.0
+
+# Curve slowdown lookahead
+_CURVE_SLOWDOWN_LOOKAHEAD = 18
+
+# Maximum y acceleration magnitude
+_A_Y_MAX_V = [1.2]
+_A_Y_MAX_BP = [0.]
+
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
@@ -68,6 +78,21 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   a_x_allowed = math.sqrt(max(a_total_max**2 - a_y**2, 0.))
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
+
+
+def calc_curve_max_speed(v_ego, d_poly): # credit to stock additions
+  # Radius of curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
+  x = _CURVE_SLOWDOWN_LOOKAHEAD
+  y_p = 3 * d_poly[0] * x ** 2 + 2 * d_poly[1] * x + d_poly[2]
+  y_pp = 6 * d_poly[0] * x + 2 * d_poly[1]
+  if y_pp == 0:
+    return V_CRUISE_MAX
+  radius = abs((1. + y_p ** 2) ** 1.5 / y_pp)
+
+  a_y_max = interp(v_ego, _A_Y_MAX_BP, _A_Y_MAX_V)
+
+  # Centripetal acceleration = v^2/r
+  return math.sqrt(a_y_max*radius)
 
 
 class Planner():
@@ -152,6 +177,8 @@ class Planner():
         # if required so, force a smooth deceleration
         accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
         accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
+
+      v_cruise_setpoint = np.clip(calc_curve_max_speed(v_ego, PP.LP.d_poly), v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
 
       self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                     v_cruise_setpoint,
