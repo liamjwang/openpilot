@@ -169,6 +169,14 @@ class Planner():
     #   print(f"{cur_time:10.1f} smooth-long v_ego:{v_ego:7.1f} lead_1_velocity:{lead_1.vLeadK:7.1f}")
     #   self.lastPrintTime = round(printTime)
 
+    curve_max_speed, radius, a_y_max = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly)
+    v_cruise_setpoint = np.clip(curve_max_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
+
+    if pm is not None and messaging is not None:
+      testJoystick_send = messaging.new_message('testJoystick')
+      testJoystick_send.testJoystick.axes = list([float(curve_max_speed), float(radius), float(a_y_max)])
+      pm.send('testJoystick', testJoystick_send)
+
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
       accel_limits = calc_cruise_accel_limits(v_ego, following)
@@ -179,14 +187,6 @@ class Planner():
         # if required so, force a smooth deceleration
         accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
         accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
-
-      curve_max_speed, radius, a_y_max = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly)
-      v_cruise_setpoint = np.clip(curve_max_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
-
-      if pm is not None and messaging is not None:
-        testJoystick_send = messaging.new_message('testJoystick')
-        testJoystick_send.testJoystick.axes = list([float(curve_max_speed), float(radius), float(a_y_max)])
-        pm.send('testJoystick', testJoystick_send)
 
       self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                     v_cruise_setpoint,
