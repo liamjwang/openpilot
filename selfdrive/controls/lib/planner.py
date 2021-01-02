@@ -181,8 +181,8 @@ class Planner():
     curve_max_speed = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly, pm)
     smoothed_curve_speed, smoothed_curve_accel = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                     curve_max_speed,
-                                                    -_A_CURVE_SLOWDOWN_MAX_V, _A_CURVE_SLOWDOWN_MAX_V,
-                                                    -_J_CURVE_SLOWDOWN_MAX_V, _J_CURVE_SLOWDOWN_MAX_V,
+                                                    _A_CURVE_SLOWDOWN_MAX_V, -_A_CURVE_SLOWDOWN_MAX_V,
+                                                    _J_CURVE_SLOWDOWN_MAX_V, -_J_CURVE_SLOWDOWN_MAX_V,
                                                     LON_MPC_STEP)
     v_cruise_setpoint = np.clip(smoothed_curve_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
 
