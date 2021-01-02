@@ -35,19 +35,19 @@ _J_CRUISE_MAX_V = [.6, .8, 1.0, .5, .3, .2]  # slow at first for safety
 _J_CRUISE_MAX_V_FOLLOWING = [.7, 1.0, .8, .3, .2, .2]
 _J_CRUISE_MAX_BP = [ 0., 2.,  5.,  10., 20.,  40.]
 
-# Lookup table for turns
+# Lookup table for turn total acceleration limiting
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
-# Maximum slowdown for curves (not needed in theory, just for testing)
-_V_MAX_CURVE_SLOWDOWN = 2.0
-_V_MIN_CURVE_ABS_VELOCITY = 10.
+# Maximum slowdown for turn (not needed in theory, just for testing)
+_V_MAX_TURN_SLOWDOWN = 2.0
+_V_MIN_TURN_ABS_VELOCITY = 10.
 
-# Curve slowdown lookahead
-_CURVE_SLOWDOWN_LOOKAHEAD = 18
+# Turn slowdown lookahead
+_TURN_SLOWDOWN_LOOKAHEAD = 18
 
-_A_CURVE_SLOWDOWN_MAX_V = 1.
-_J_CURVE_SLOWDOWN_MAX_V = 0.2
+# Turn slowdown multiplier
+_J_TURN_SLOWDOWN_K = 0.5
 
 # Maximum y acceleration magnitude
 _A_Y_MAX_V = [1.2]
@@ -94,8 +94,8 @@ def calc_radius(d_poly, lookahead): # credit to stock additions
   return abs((1. + y_p ** 2) ** 1.5 / y_pp)
 
 
-def calc_curve_max_speed(v_cruise_setpoint, d_poly, pm):
-  radius = calc_radius(d_poly, _CURVE_SLOWDOWN_LOOKAHEAD)
+def calc_turn_max_speed(v_cruise_setpoint, d_poly, pm):
+  radius = calc_radius(d_poly, _TURN_SLOWDOWN_LOOKAHEAD)
   curve_speed = 0.11955021*math.sqrt(radius) + 0.80747497*v_cruise_setpoint
 
   if pm is not None and messaging is not None:
@@ -103,8 +103,10 @@ def calc_curve_max_speed(v_cruise_setpoint, d_poly, pm):
     testJoystick_send.testJoystick.axes = list([float(0.0), float(radius), float(curve_speed)])
     pm.send('testJoystick', testJoystick_send)
 
-  return max(_V_MIN_CURVE_ABS_VELOCITY, curve_speed)
+  return max(_V_MIN_TURN_ABS_VELOCITY, curve_speed)
 
+def limit_jerk_in_turns(v_ego, turn_slowdown_active, j_target, CP):
+  return [j_target[0]*_J_TURN_SLOWDOWN_K, j_target[1]*_J_TURN_SLOWDOWN_K]
 
 class Planner():
   def __init__(self, CP):
@@ -172,27 +174,16 @@ class Planner():
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
 
-    # self.lastPrintTime = 0
-    # printTime = cur_time / 2
-    # if round(printTime) != self.lastPrintTime:
-    #   print(f"{cur_time:10.1f} smooth-long v_ego:{v_ego:7.1f} lead_1_velocity:{lead_1.vLeadK:7.1f}")
-    #   self.lastPrintTime = round(printTime)
-
-    curve_max_speed = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly, pm)
-    smoothed_curve_speed, smoothed_curve_accel = speed_smoother(self.v_acc_start, self.a_acc_start,
-                                                                curve_max_speed,
-                                                                _A_CURVE_SLOWDOWN_MAX_V, -_A_CURVE_SLOWDOWN_MAX_V,
-                                                                _J_CURVE_SLOWDOWN_MAX_V, -_J_CURVE_SLOWDOWN_MAX_V,
-                                                                LON_MPC_STEP)
-    v_cruise_turn_setpoint = np.clip(smoothed_curve_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
-
-    assert v_cruise_turn_setpoint <= v_cruise_setpoint+1
+    turn_max_speed = calc_turn_max_speed(v_cruise_setpoint, PP.LP.d_poly, pm)
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
+      v_cruise_turn_setpoint = np.clip(turn_max_speed, v_cruise_setpoint - _V_MAX_TURN_SLOWDOWN, v_cruise_setpoint)
+
       accel_limits = calc_cruise_accel_limits(v_ego, following)
       jerk_limits = calc_cruise_jerk_limits(v_ego, following)
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
+      jerk_limits_turns = limit_jerk_in_turns(v_ego, v_cruise_turn_setpoint != v_cruise_setpoint, jerk_limits, self.CP)
 
       if force_slow_decel:
         # if required so, force a smooth deceleration
@@ -202,7 +193,7 @@ class Planner():
       self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
                                                     v_cruise_turn_setpoint,
                                                     accel_limits_turns[1], accel_limits_turns[0],
-                                                    jerk_limits[1], jerk_limits[0],
+                                                    jerk_limits_turns[1], jerk_limits_turns[0],
                                                     LON_MPC_STEP)
 
       # cruise speed can't be negative even is user is distracted
@@ -225,7 +216,7 @@ class Planner():
     self.mpc1.update(pm, sm['carState'], lead_1)
     self.mpc2.update(pm, sm['carState'], lead_2)
 
-    self.choose_solution(v_cruise_turn_setpoint, enabled)
+    self.choose_solution(v_cruise_setpoint, enabled)
 
     # determine fcw
     if self.mpc1.new_lead:
