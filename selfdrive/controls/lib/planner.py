@@ -121,8 +121,6 @@ class Planner():
     self.a_acc = 0.0
     self.v_cruise = 0.0
     self.a_cruise = 0.0
-    self.v_turn = 0.0
-    self.a_turn = 0.0
 
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
