@@ -39,8 +39,9 @@ _J_CRUISE_MAX_BP = [ 0., 2.,  5.,  10., 20.,  40.]
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
-# Maximum slowdown for curves
+# Maximum slowdown for curves (not needed in theory, just for testing)
 _V_MAX_CURVE_SLOWDOWN = 2.0
+_V_MIN_CURVE_ABS_VELOCITY = 10.
 
 # Curve slowdown lookahead
 _CURVE_SLOWDOWN_LOOKAHEAD = 18
@@ -80,26 +81,26 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def calc_curve_max_speed(v_cruise_setpoint, d_poly, pm): # credit to stock additions
-  # Radius of curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
-  x = _CURVE_SLOWDOWN_LOOKAHEAD
+def calc_radius(d_poly, lookahead): # credit to stock additions
+  # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
+  x = lookahead
   y_p = 3 * d_poly[0] * x ** 2 + 2 * d_poly[1] * x + d_poly[2]
   y_pp = 6 * d_poly[0] * x + 2 * d_poly[1]
   if y_pp == 0:
-    return V_CRUISE_MAX
-  radius = abs((1. + y_p ** 2) ** 1.5 / y_pp)
+    return 9999
+  return abs((1. + y_p ** 2) ** 1.5 / y_pp)
 
-  a_y_max = interp(v_cruise_setpoint, _A_Y_MAX_BP, _A_Y_MAX_V)
 
-  # Centripetal acceleration = v^2/r
-  v_max = math.sqrt(a_y_max * radius)
+def calc_curve_max_speed(v_cruise_setpoint, d_poly, pm):
+  radius = calc_radius(d_poly, _CURVE_SLOWDOWN_LOOKAHEAD)
+  curve_speed = 0.11955021*math.sqrt(radius) + 0.80747497*v_cruise_setpoint
 
   if pm is not None and messaging is not None:
     testJoystick_send = messaging.new_message('testJoystick')
-    testJoystick_send.testJoystick.axes = list([float(0.0), float(radius), float(a_y_max)])
+    testJoystick_send.testJoystick.axes = list([float(0.0), float(radius), float(curve_speed)])
     pm.send('testJoystick', testJoystick_send)
 
-  return v_max
+  return max(_V_MIN_CURVE_ABS_VELOCITY, curve_speed)
 
 
 class Planner():
