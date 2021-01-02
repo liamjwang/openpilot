@@ -180,11 +180,13 @@ class Planner():
 
     curve_max_speed = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly, pm)
     smoothed_curve_speed, smoothed_curve_accel = speed_smoother(self.v_acc_start, self.a_acc_start,
-                                                    curve_max_speed,
-                                                    _A_CURVE_SLOWDOWN_MAX_V, -_A_CURVE_SLOWDOWN_MAX_V,
-                                                    _J_CURVE_SLOWDOWN_MAX_V, -_J_CURVE_SLOWDOWN_MAX_V,
-                                                    LON_MPC_STEP)
-    v_cruise_setpoint = np.clip(smoothed_curve_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
+                                                                curve_max_speed,
+                                                                _A_CURVE_SLOWDOWN_MAX_V, -_A_CURVE_SLOWDOWN_MAX_V,
+                                                                _J_CURVE_SLOWDOWN_MAX_V, -_J_CURVE_SLOWDOWN_MAX_V,
+                                                                LON_MPC_STEP)
+    v_cruise_turn_setpoint = np.clip(smoothed_curve_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
+
+    assert v_cruise_turn_setpoint <= v_cruise_setpoint+1
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
@@ -198,7 +200,7 @@ class Planner():
         accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
 
       self.v_cruise, self.a_cruise = speed_smoother(self.v_acc_start, self.a_acc_start,
-                                                    v_cruise_setpoint,
+                                                    v_cruise_turn_setpoint,
                                                     accel_limits_turns[1], accel_limits_turns[0],
                                                     jerk_limits[1], jerk_limits[0],
                                                     LON_MPC_STEP)
@@ -223,7 +225,7 @@ class Planner():
     self.mpc1.update(pm, sm['carState'], lead_1)
     self.mpc2.update(pm, sm['carState'], lead_2)
 
-    self.choose_solution(v_cruise_setpoint, enabled)
+    self.choose_solution(v_cruise_turn_setpoint, enabled)
 
     # determine fcw
     if self.mpc1.new_lead:
