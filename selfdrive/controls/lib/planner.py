@@ -46,6 +46,9 @@ _V_MIN_CURVE_ABS_VELOCITY = 10.
 # Curve slowdown lookahead
 _CURVE_SLOWDOWN_LOOKAHEAD = 18
 
+_A_CURVE_SLOWDOWN_MAX_V = 1.
+_J_CURVE_SLOWDOWN_MAX_V = 0.2
+
 # Maximum y acceleration magnitude
 _A_Y_MAX_V = [1.2]
 _A_Y_MAX_BP = [0.]
@@ -118,6 +121,8 @@ class Planner():
     self.a_acc = 0.0
     self.v_cruise = 0.0
     self.a_cruise = 0.0
+    self.v_turn = 0.0
+    self.a_turn = 0.0
 
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
@@ -176,7 +181,12 @@ class Planner():
     #   self.lastPrintTime = round(printTime)
 
     curve_max_speed = calc_curve_max_speed(v_cruise_setpoint, PP.LP.d_poly, pm)
-    v_cruise_setpoint = np.clip(curve_max_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
+    smoothed_curve_max_speed = speed_smoother(self.v_acc_start, self.a_acc_start,
+                                                    curve_max_speed,
+                                                    -_A_CURVE_SLOWDOWN_MAX_V, _A_CURVE_SLOWDOWN_MAX_V,
+                                                    -_J_CURVE_SLOWDOWN_MAX_V, _J_CURVE_SLOWDOWN_MAX_V,
+                                                    LON_MPC_STEP)
+    v_cruise_setpoint = np.clip(smoothed_curve_max_speed, v_cruise_setpoint - _V_MAX_CURVE_SLOWDOWN, v_cruise_setpoint)
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
