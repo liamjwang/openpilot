@@ -44,7 +44,7 @@ _V_MAX_TURN_SLOWDOWN = 2.0
 _V_MIN_TURN_ABS_VELOCITY = 10.
 
 # Turn slowdown lookahead
-_TURN_SLOWDOWN_LOOKAHEAD = 18
+_TURN_SLOWDOWN_LOOKAHEAD_RANGE = (5, 20)
 
 # Turn slowdown multiplier
 _J_TURN_SLOWDOWN_K = 0.5
@@ -85,17 +85,17 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 
 def calc_radius(d_poly, lookahead): # credit to stock additions
-  # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Curvature_of_the_graph_of_a_function
-  x = lookahead
+  # Curvature of polynomial https://en.wikipedia.org/wiki/Curvature#Graph_of_a_function
+  x = np.linspace(lookahead[0], lookahead[1], 20)
   y_p = 3 * d_poly[0] * x ** 2 + 2 * d_poly[1] * x + d_poly[2]
   y_pp = 6 * d_poly[0] * x + 2 * d_poly[1]
   if y_pp == 0:
     return 9999
-  return abs((1. + y_p ** 2) ** 1.5 / y_pp)
+  return np.min(np.abs((1. + y_p ** 2) ** 1.5 / y_pp))
 
 
 def calc_turn_max_speed(v_cruise_setpoint, d_poly, pm):
-  radius = calc_radius(d_poly, _TURN_SLOWDOWN_LOOKAHEAD)
+  radius = calc_radius(d_poly, _TURN_SLOWDOWN_LOOKAHEAD_RANGE)
   curve_speed = 0.11955021*math.sqrt(radius) + 0.80747497*v_cruise_setpoint
 
   if pm is not None and messaging is not None:
