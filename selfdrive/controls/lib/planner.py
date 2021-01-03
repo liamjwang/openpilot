@@ -32,7 +32,7 @@ _A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.] # someone seems to think this is kph, b
 # lookup tables VS speed to determine min and max jerk in cruise
 # need fast jerk at very low speed for stop and go
 _J_CRUISE_MAX_V = [.6, .8, 1.0, .5, .3, .2]  # slow at first for safety
-_J_CRUISE_MAX_V_FOLLOWING = [.9, 1.0, .8, .3, .2, .2]
+_J_CRUISE_MAX_V_FOLLOWING = [.7, 1.0, .8, .3, .2, .2]
 _J_CRUISE_MAX_BP = [ 0., 2.,  5.,  10., 20.,  40.]
 
 # Lookup table for turn total acceleration limiting
@@ -46,12 +46,8 @@ _V_MIN_TURN_ABS_VELOCITY = 10.
 # Turn slowdown lookahead
 _TURN_SLOWDOWN_LOOKAHEAD_RANGE = (5, 20)
 
-# Turn slowdown multiplier
-_J_TURN_SLOWDOWN_K = 0.5
-
-# Maximum y acceleration magnitude
-_A_Y_MAX_V = [1.2]
-_A_Y_MAX_BP = [0.]
+# Turn slowdown jerk limit multiplier
+_J_LIMIT_TURN_SLOWDOWN_K = 0.5
 
 
 def calc_cruise_accel_limits(v_ego, following):
@@ -104,8 +100,9 @@ def calc_turn_max_speed(v_cruise_setpoint, d_poly, pm):
 
   return max(_V_MIN_TURN_ABS_VELOCITY, curve_speed)
 
-def limit_jerk_in_turns(v_ego, turn_slowdown_active, j_target, CP):
-  return [j_target[0]*_J_TURN_SLOWDOWN_K, j_target[1]*_J_TURN_SLOWDOWN_K]
+def limit_jerk_in_turns(turn_slowdown_active, j_target):
+  jerk_multiplier = _J_LIMIT_TURN_SLOWDOWN_K if turn_slowdown_active else 1
+  return [j_target[0] * jerk_multiplier, j_target[1] * jerk_multiplier]
 
 class Planner():
   def __init__(self, CP):
@@ -129,6 +126,8 @@ class Planner():
 
     self.params = Params()
     self.first_loop = True
+
+    self.allow_turn_slowdown = False
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     solutions = {'cruise': self.v_cruise}
@@ -177,12 +176,17 @@ class Planner():
 
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].gasPressed:
-      v_cruise_turn_setpoint = np.clip(turn_max_speed, v_cruise_setpoint - _V_MAX_TURN_SLOWDOWN, v_cruise_setpoint)
+
+      if turn_max_speed > v_cruise_setpoint:
+        self.allow_turn_slowdown = True
+
+      max_turn_slowdown_allowed = _V_MAX_TURN_SLOWDOWN if self.allow_turn_slowdown else 0
+      v_cruise_turn_setpoint = np.clip(turn_max_speed, v_cruise_setpoint - max_turn_slowdown_allowed, v_cruise_setpoint)
 
       accel_limits = calc_cruise_accel_limits(v_ego, following)
       jerk_limits = calc_cruise_jerk_limits(v_ego, following)
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
-      jerk_limits_turns = limit_jerk_in_turns(v_ego, v_cruise_turn_setpoint != v_cruise_setpoint, jerk_limits, self.CP)
+      jerk_limits_turns = limit_jerk_in_turns(turn_max_speed < v_cruise_setpoint, jerk_limits)
 
       if force_slow_decel:
         # if required so, force a smooth deceleration
@@ -208,6 +212,7 @@ class Planner():
       self.a_acc_start = reset_accel
       self.v_cruise = reset_speed
       self.a_cruise = reset_accel
+      self.allow_turn_slowdown = False  # Avoid slowing down if op is enabled while in a turn
 
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
