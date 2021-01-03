@@ -47,7 +47,7 @@ _V_MIN_TURN_ABS_VELOCITY = 10.
 _TURN_SLOWDOWN_LOOKAHEAD_RANGE = (5, 20)
 
 # Turn slowdown jerk limit multiplier
-_J_LIMIT_TURN_SLOWDOWN_K = 0.5
+_J_LIMIT_TURN_SLOWDOWN_K = 0.4
 
 
 def calc_cruise_accel_limits(v_ego, following):
