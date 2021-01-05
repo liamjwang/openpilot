@@ -85,8 +85,10 @@ def calc_radius(d_poly, lookahead): # credit to stock additions
   x = np.linspace(lookahead[0], lookahead[1], 20)
   y_p = 3 * d_poly[0] * x ** 2 + 2 * d_poly[1] * x + d_poly[2]
   y_pp = 6 * d_poly[0] * x + 2 * d_poly[1]
-  y_pp[y_pp == 0] = 0.000001
-  return np.mean(np.abs((1. + y_p ** 2) ** 1.5 / y_pp))
+  denom = (1. + y_p ** 2) ** 1.5
+  denom[denom == 0] = 0.000001
+  curvatureMean = np.mean(np.abs(y_pp / denom))
+  return 1 / curvatureMean if curvatureMean != 0 else 9999
 
 
 def calc_turn_max_speed(v_cruise_setpoint, d_poly, pm):
