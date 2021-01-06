@@ -188,7 +188,7 @@ class Planner():
       accel_limits = calc_cruise_accel_limits(v_ego, following)
       jerk_limits = calc_cruise_jerk_limits(v_ego, following)
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngle, accel_limits, self.CP)
-      jerk_limits_turns = limit_jerk_in_turns(turn_max_speed < v_cruise_setpoint, jerk_limits)
+      jerk_limits_turns = limit_jerk_in_turns(v_cruise_setpoint - max_turn_slowdown_allowed < self.v_acc_start < v_cruise_setpoint, jerk_limits)
 
       if force_slow_decel:
         # if required so, force a smooth deceleration
