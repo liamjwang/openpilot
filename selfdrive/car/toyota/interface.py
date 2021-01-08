@@ -298,7 +298,7 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     ret.longitudinalTuning.deadzoneBP = [0., 9.]
-    ret.longitudinalTuning.deadzoneV = [0., .15]
+    ret.longitudinalTuning.deadzoneV = [0., .1]
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
     ret.longitudinalTuning.kiBP = [0., 35.]
 
