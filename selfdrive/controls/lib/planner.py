@@ -40,7 +40,8 @@ _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
 # Maximum slowdown for turn (not needed in theory, just for testing)
-_V_MAX_TURN_SLOWDOWN = 2.0
+_V_MAX_TURN_SLOWDOWN_V = [0., 2.0, 2.0, 0.9, 0.5]
+_V_MAX_TURN_SLOWDOWN_BP = [10., 15., 20., 30., 40.]
 _V_MIN_TURN_ABS_VELOCITY = 10.
 
 # Turn slowdown lookahead
@@ -182,7 +183,7 @@ class Planner():
       if turn_max_speed > v_cruise_setpoint:
         self.allow_turn_slowdown = True
 
-      max_turn_slowdown_allowed = _V_MAX_TURN_SLOWDOWN if self.allow_turn_slowdown else 0
+      max_turn_slowdown_allowed = interp(v_ego, _V_MAX_TURN_SLOWDOWN_BP, _V_MAX_TURN_SLOWDOWN_V) if self.allow_turn_slowdown else 0
       v_cruise_turn_setpoint = np.clip(turn_max_speed, v_cruise_setpoint - max_turn_slowdown_allowed, v_cruise_setpoint)
 
       accel_limits = calc_cruise_accel_limits(v_ego, following)
