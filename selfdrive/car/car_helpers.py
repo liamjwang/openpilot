@@ -1,5 +1,6 @@
 import os
 import json
+import pickle
 from typing import Dict, List
 
 from cereal import car
@@ -13,7 +14,7 @@ from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, 
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
-from common.params_pyx import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking # pylint: disable=no-name-in-module, import-error
+from common.params_pyx import put_nonblocking # pylint: disable=no-name-in-module, import-error
 
 EventName = car.CarEvent.EventName
 
@@ -123,7 +124,7 @@ def fingerprint(logcan, sendcan):
 
   cached_finger = Params().get("CarFingerprintFull")
   if cached_finger is not None:
-    finger = json.loads(cached_finger.decode("UTF-8"))
+    finger = pickle.loads(cached_finger)
   else:
     finger = gen_empty_fingerprint()
 
@@ -161,7 +162,7 @@ def fingerprint(logcan, sendcan):
 
       frame += 1
 
-  put_nonblocking("CarFingerprintFull", json.dumps(finger).encode("UTF-8"))
+  put_nonblocking("CarFingerprintFull", pickle.dumps(finger))
 
   exact_match = True
   source = car.CarParams.FingerprintSource.can
