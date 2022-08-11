@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Dict, List
 
 from cereal import car
@@ -12,6 +13,7 @@ from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, 
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
+from common.params_pyx import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking # pylint: disable=no-name-in-module, import-error
 
 EventName = car.CarEvent.EventName
 
@@ -80,6 +82,7 @@ def fingerprint(logcan, sendcan):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   ecu_rx_addrs = set()
+  car_fingerprint = None
 
   if not fixed_fingerprint and not skip_fw_query:
     # Vin query only reliably works thorugh OBDII
@@ -95,6 +98,7 @@ def fingerprint(logcan, sendcan):
       cloudlog.warning("Using cached CarParams")
       vin, vin_rx_addr = cached_params.carVin, 0
       car_fw = list(cached_params.carFw)
+      car_fingerprint = cached_params.carFingerprint
     else:
       cloudlog.warning("Getting VIN & FW versions")
       _, vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
@@ -112,45 +116,52 @@ def fingerprint(logcan, sendcan):
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
 
-  finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
   frame_fingerprint = 100  # 1s
-  car_fingerprint = None
   done = False
 
-  # drain CAN socket so we always get the latest messages
-  messaging.drain_sock_raw(logcan)
+  cached_finger = Params().get("CarFingerprintFull")
+  if cached_finger is not None:
+    finger = json.loads(cached_finger.decode("UTF-8"))
+  else:
+    finger = gen_empty_fingerprint()
 
-  while not done:
-    a = get_one_can(logcan)
+  if car_fingerprint is None or finger is None:
+    # drain CAN socket so we always get the latest messages
+    messaging.drain_sock_raw(logcan)
 
-    for can in a.can:
-      # The fingerprint dict is generated for all buses, this way the car interface
-      # can use it to detect a (valid) multipanda setup and initialize accordingly
-      if can.src < 128:
-        if can.src not in finger:
-          finger[can.src] = {}
-        finger[can.src][can.address] = len(can.dat)
+    while not done:
+      a = get_one_can(logcan)
 
+      for can in a.can:
+        # The fingerprint dict is generated for all buses, this way the car interface
+        # can use it to detect a (valid) multipanda setup and initialize accordingly
+        if can.src < 128:
+          if can.src not in finger:
+            finger[can.src] = {}
+          finger[can.src][can.address] = len(can.dat)
+
+        for b in candidate_cars:
+          # Ignore extended messages and VIN query response.
+          if can.src == b and can.address < 0x800 and can.address not in (0x7df, 0x7e0, 0x7e8):
+            candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
+
+      # if we only have one car choice and the time since we got our first
+      # message has elapsed, exit
       for b in candidate_cars:
-        # Ignore extended messages and VIN query response.
-        if can.src == b and can.address < 0x800 and can.address not in (0x7df, 0x7e0, 0x7e8):
-          candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
+        if len(candidate_cars[b]) == 1 and frame > frame_fingerprint:
+          # fingerprint done
+          car_fingerprint = candidate_cars[b][0]
 
-    # if we only have one car choice and the time since we got our first
-    # message has elapsed, exit
-    for b in candidate_cars:
-      if len(candidate_cars[b]) == 1 and frame > frame_fingerprint:
-        # fingerprint done
-        car_fingerprint = candidate_cars[b][0]
+      # bail if no cars left or we've been waiting for more than 2s
+      failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200
+      succeeded = car_fingerprint is not None
+      done = failed or succeeded
 
-    # bail if no cars left or we've been waiting for more than 2s
-    failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200
-    succeeded = car_fingerprint is not None
-    done = failed or succeeded
+      frame += 1
 
-    frame += 1
+  put_nonblocking("CarFingerprintFull", json.dumps(finger).encode("UTF-8"))
 
   exact_match = True
   source = car.CarParams.FingerprintSource.can
