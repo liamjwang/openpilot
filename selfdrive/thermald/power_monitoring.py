@@ -132,4 +132,4 @@ class PowerMonitoring:
     should_shutdown &= in_car
     should_shutdown |= self.params.get_bool("ForcePowerDown")
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
-    return should_shutdown
+    return False
