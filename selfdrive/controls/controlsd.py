@@ -29,6 +29,7 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
 from system.hardware import HARDWARE
 from selfdrive.manager.process_config import managed_processes
+import time
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
@@ -57,9 +58,14 @@ ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
 ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
+start = time.time()
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
+    global start
+    start = time.time()
+    print(f"liam, {start}, controlsd")
+
     config_realtime_process(4, Priority.CTRL_HIGH)
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
@@ -96,10 +102,13 @@ class Controls:
     if CI is None:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
+      print(f"liam, {time.time()-start}, beginfinger")
       get_one_can(self.can_sock)
+      print(f"liam, {time.time()-start}, onecan")
 
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], num_pandas)
+      print(f"liam, {time.time()-start}, finger")
     else:
       self.CI, self.CP = CI, CI.CP
 
@@ -208,6 +217,8 @@ class Controls:
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
+
+    print(f"liam, {time.time() - start}, controlsdinit")
 
   def set_initial_state(self):
     if REPLAY:
@@ -432,7 +443,9 @@ class Controls:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
+    print(f"liam, {time.time() - start}, beforeci")
     CS = self.CI.update(self.CC, can_strs)
+    print(f"liam, {time.time() - start}, afterciupdate")
 
     self.sm.update(0)
 
