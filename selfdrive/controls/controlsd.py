@@ -60,6 +60,8 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 start = time.time()
 
+first_ci_update = False
+
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None, CI=None):
     global start
@@ -443,9 +445,12 @@ class Controls:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    # print(f"liam, {time.time() - start}, beforeci")
     CS = self.CI.update(self.CC, can_strs)
-    # print(f"liam, {time.time() - start}, afterciupdate")
+
+    global first_ci_update
+    if not first_ci_update:
+      first_ci_update = True
+      print(f"liam, {time.time() - start}, afterciupdate         *********")
 
     self.sm.update(0)
 
