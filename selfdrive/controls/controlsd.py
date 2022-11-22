@@ -443,9 +443,9 @@ class Controls:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    print(f"liam, {time.time() - start}, beforeci")
+    # print(f"liam, {time.time() - start}, beforeci")
     CS = self.CI.update(self.CC, can_strs)
-    print(f"liam, {time.time() - start}, afterciupdate")
+    # print(f"liam, {time.time() - start}, afterciupdate")
 
     self.sm.update(0)
 
