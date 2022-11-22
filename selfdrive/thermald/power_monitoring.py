@@ -115,9 +115,18 @@ class PowerMonitoring:
 
     now = sec_since_boot()
     should_shutdown = False
-    should_shutdown |= (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
-    should_shutdown |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3)) and (self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3))
-    should_shutdown |= (self.car_battery_capacity_uWh <= 0)
+    s = (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
+    should_shutdown |= s
+    e_ = (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3)) and (self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3))
+    should_shutdown |= e_
+    wh_ = (self.car_battery_capacity_uWh <= 0)
+    if s:
+      print(f"Offroad for too long: {now - offroad_timestamp} > {MAX_TIME_OFFROAD_S}")
+    if e_:
+      print(f"Car battery low: {self.car_voltage_mV / 1e3} < {VBATT_PAUSE_CHARGING} V")
+    if wh_:
+      print(f"Car battery capacity low: {self.car_battery_capacity_uWh / 1e6} < 0 Wh")
+    should_shutdown |= wh_
     should_shutdown &= not ignition
     should_shutdown &= (not self.params.get_bool("DisablePowerDown"))
     should_shutdown &= in_car
