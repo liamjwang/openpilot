@@ -315,16 +315,15 @@ def thermald_thread(end_event, hw_queue):
     if started_ts is None:
       should_start = should_start and all(startup_conditions.values())
 
+    onroad_changed = False
     if should_start != should_start_prev or (count == 0):
+      onroad_changed = True
       print(f"onroad changed: {should_start}, {time.time()}")
       params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)
 
       params.put_bool("IsEngaged", False)
       engaged_prev = False
-      print(f"thermald set_power_save before {time.time()}")
-      HARDWARE.set_power_save(not should_start)
-      print(f"thermald set_power_save after {time.time()}")
 
     print(f"thermald fsdkslda {time.time()}")
 
@@ -389,6 +388,11 @@ def thermald_thread(end_event, hw_queue):
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
+
+    if onroad_changed:
+      print(f"thermald set_power_save before {not should_start} {time.time()}")
+      HARDWARE.set_power_save(not should_start)
+      print(f"thermald set_power_save after {time.time()}")
 
     should_start_prev = should_start
 
