@@ -322,7 +322,11 @@ def thermald_thread(end_event, hw_queue):
 
       params.put_bool("IsEngaged", False)
       engaged_prev = False
+      print(f"thermald set_power_save before {time.time()}")
       HARDWARE.set_power_save(not should_start)
+      print(f"thermald set_power_save after {time.time()}")
+
+    print(f"thermald fsdkslda {time.time()}")
 
     if sm.updated['controlsState']:
       engaged = sm['controlsState'].enabled
@@ -330,11 +334,17 @@ def thermald_thread(end_event, hw_queue):
         params.put_bool("IsEngaged", engaged)
         engaged_prev = engaged
 
+      print(f"thermald kmsg before {time.time()}")
+
       try:
         with open('/dev/kmsg', 'w') as kmsg:
           kmsg.write(f"<3>[thermald] engaged: {engaged}\n")
       except Exception:
         pass
+
+      print(f"thermald kmsg after {time.time()}")
+
+    print(f"thermald dfsgsdfgsd {time.time()}")
 
     if should_start:
       off_ts = None
