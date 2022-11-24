@@ -450,7 +450,7 @@ class Controls:
     global first_ci_update
     if not first_ci_update:
       first_ci_update = True
-      print(f"liam, {time.time() - start}, afterciupdate         *********")
+      print(f"     &&&&&&&&&&&& afterciupdate     {time.time()}     &&&&&&&&&&&&     ")
 
     self.sm.update(0)
 
