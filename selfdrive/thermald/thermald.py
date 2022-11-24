@@ -325,6 +325,10 @@ def thermald_thread(end_event, hw_queue):
       params.put_bool("IsEngaged", False)
       engaged_prev = False
 
+      print(f"thermald set_power_save before {not should_start} {time.time()}")
+      HARDWARE.set_power_save(not should_start)
+      print(f"thermald set_power_save after {time.time()}")
+
     print(f"thermald fsdkslda {time.time()}")
 
     if sm.updated['controlsState']:
@@ -379,6 +383,7 @@ def thermald_thread(end_event, hw_queue):
       params.put_bool("DoShutdown", True)
 
     msg.deviceState.started = started_ts is not None
+    msg.deviceState.earlyStarted = started_ts is not None
     print(f"thermald started: {msg.deviceState.started}, {time.time()}")
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
 
@@ -388,11 +393,6 @@ def thermald_thread(end_event, hw_queue):
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
-
-    if onroad_changed:
-      print(f"thermald set_power_save before {not should_start} {time.time()}")
-      HARDWARE.set_power_save(not should_start)
-      print(f"thermald set_power_save after {time.time()}")
 
     should_start_prev = should_start
 
