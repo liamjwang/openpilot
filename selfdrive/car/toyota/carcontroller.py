@@ -155,8 +155,10 @@ class CarController:
       if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
         can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
+
     # *** static msgs ***
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
+      print(f" kasldfsdka {self.CP.enableDsu} {self.CP.carFingerprint in cars} {time.time()}")
       if self.frame % fr_step == 0 and self.CP.enableDsu and self.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
         global static_dsu_msg_sent
