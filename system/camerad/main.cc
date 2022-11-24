@@ -12,6 +12,10 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+  printf("camerad sleeping..\n");
+  util::sleep_for(4000);
+  printf("camerad starting\n");
+
   int ret;
   ret = util::set_realtime_priority(53);
   assert(ret == 0);
