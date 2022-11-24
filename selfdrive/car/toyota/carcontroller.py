@@ -9,6 +9,8 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
+import time
+
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
@@ -17,6 +19,8 @@ MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
+
+static_dsu_msg_sent = False
 
 
 class CarController:
@@ -155,6 +159,10 @@ class CarController:
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
       if self.frame % fr_step == 0 and self.CP.enableDsu and self.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
+        global static_dsu_msg_sent
+        if not static_dsu_msg_sent:
+          static_dsu_msg_sent = True
+          print(f"     ^^^^^^^^^^ static_dsu_sent     {time.time()}       ^^^^^^^^^^    ")
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
