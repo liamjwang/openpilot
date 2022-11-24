@@ -369,7 +369,7 @@ def thermald_thread(end_event, hw_queue):
       params.put_bool("DoShutdown", True)
 
     msg.deviceState.started = started_ts is not None
-    print(f"started: {msg.deviceState.started}, {time.time()}")
+    print(f"thermald started: {msg.deviceState.started}, {time.time()}")
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
 
     last_ping = params.get("LastAthenaPingTime")
