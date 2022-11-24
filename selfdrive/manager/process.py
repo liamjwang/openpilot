@@ -311,6 +311,7 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
 
     if run:
       p.start()
+      print(f"starting {p.name}, {time.time()}")
     else:
       p.stop(block=False)
 
