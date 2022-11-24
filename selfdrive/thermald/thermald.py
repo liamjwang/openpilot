@@ -219,6 +219,7 @@ def thermald_thread(end_event, hw_queue):
       if onroad_conditions["ignition"]:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
+        print(f" panda timed out onroad {time.time()}")
 
     try:
       last_hw_state = hw_queue.get_nowait()
@@ -340,6 +341,7 @@ def thermald_thread(end_event, hw_queue):
       if started_ts is None:
         started_ts = sec_since_boot()
         started_seen = True
+        print(f"started_ts updated, {time.time()}")
     else:
       if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions, error=True)
@@ -367,6 +369,7 @@ def thermald_thread(end_event, hw_queue):
       params.put_bool("DoShutdown", True)
 
     msg.deviceState.started = started_ts is not None
+    print(f"started: {msg.deviceState.started}, {time.time()}")
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
 
     last_ping = params.get("LastAthenaPingTime")

@@ -21,6 +21,7 @@ from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from system.swaglog import cloudlog, add_file_handler
 from system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
                               terms_version, training_version, is_tested_branch
+import time
 
 
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
@@ -137,6 +138,7 @@ def manager_thread() -> None:
     sm.update()
 
     started = sm['deviceState'].started
+    print(f"started: {started}, {time.time()}")
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
