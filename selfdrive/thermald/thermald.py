@@ -191,6 +191,8 @@ def thermald_thread(end_event, hw_queue):
 
   fan_controller = None
 
+  early_start_loop = False
+
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
 
@@ -355,6 +357,7 @@ def thermald_thread(end_event, hw_queue):
         started_ts = sec_since_boot()
         started_seen = True
         print(f"started_ts updated, {time.time()}")
+        early_start_loop = True
     else:
       if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions, error=True)
@@ -382,8 +385,10 @@ def thermald_thread(end_event, hw_queue):
       cloudlog.warning(f"shutting device down, offroad since {off_ts}")
       params.put_bool("DoShutdown", True)
 
-    msg.deviceState.started = started_ts is not None
     msg.deviceState.earlyStarted = started_ts is not None
+    msg.deviceState.started = msg.deviceState.earlyStarted and not early_start_loop
+    early_start_loop = False
+
     print(f"thermald started: {msg.deviceState.started}, {time.time()}")
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
 
