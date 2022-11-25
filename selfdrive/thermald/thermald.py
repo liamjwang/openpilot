@@ -328,19 +328,19 @@ def thermald_thread(end_event, hw_queue):
       engaged_prev = False
 
       if not should_start:
-        print(f"thermald set_power_save before {not should_start} {time.time()}")
+        print(f"thermald set_power_save asdf before {not should_start} {time.time()}")
         HARDWARE.set_power_save(not should_start)
-        print(f"thermald set_power_save after {time.time()}")
+        print(f"thermald set_power_save asdf after {time.time()}")
 
     if early_start_loop:
       early_start_loop = False
 
-      if should_start:
-        print(f"thermald set_power_save before {not should_start} {time.time()}")
-        HARDWARE.set_power_save(not should_start)
-        print(f"thermald set_power_save after {time.time()}")
+      print(f"early_start_loop {not should_start} {time.time()}")
 
-    print(f"thermald fsdkslda {time.time()}")
+      if should_start:
+        print(f"thermald set_power_save dsfds before {not should_start} {time.time()}")
+        HARDWARE.set_power_save(not should_start)
+        print(f"thermald set_power_save dsfds after {time.time()}")
 
     if sm.updated['controlsState']:
       engaged = sm['controlsState'].enabled
@@ -348,17 +348,11 @@ def thermald_thread(end_event, hw_queue):
         params.put_bool("IsEngaged", engaged)
         engaged_prev = engaged
 
-      print(f"thermald kmsg before {time.time()}")
-
       try:
         with open('/dev/kmsg', 'w') as kmsg:
           kmsg.write(f"<3>[thermald] engaged: {engaged}\n")
       except Exception:
         pass
-
-      print(f"thermald kmsg after {time.time()}")
-
-    print(f"thermald dfsgsdfgsd {time.time()}")
 
     if should_start:
       off_ts = None
@@ -397,7 +391,7 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.earlyStarted = started_ts is not None
     msg.deviceState.started = msg.deviceState.earlyStarted and not early_start_loop
 
-    print(f"thermald started: {msg.deviceState.started}, {time.time()}")
+    print(f"thermald started, earlyStarted: {msg.deviceState.started}, {msg.deviceState.earlyStarted}, {time.time()}")
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
 
     last_ping = params.get("LastAthenaPingTime")
