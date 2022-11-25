@@ -132,14 +132,15 @@ def manager_thread() -> None:
   sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
-  ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
+  ensure_running(managed_processes.values(), False, False, params=params, CP=sm['carParams'], not_run=ignore)
 
   while True:
     sm.update()
 
     started = sm['deviceState'].started
-    print(f"manager started: {started}, {time.time()}")
-    ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
+    earlyStarted = sm['deviceState'].earlyStarted
+    print(f"manager started: {started}, {earlyStarted}, {time.time()}")
+    ensure_running(managed_processes.values(), started, earlyStarted, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)

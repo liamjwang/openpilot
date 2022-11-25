@@ -71,6 +71,7 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   onroad = True
+  early_onroad = False
   offroad = False
   callback: Optional[Callable[[bool, Params, car.CarParams], bool]] = None
   proc: Optional[Process] = None
@@ -184,12 +185,13 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, early_onroad = False, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.enabled = enabled
     self.onroad = onroad
+    self.early_onroad = early_onroad
     self.offroad = offroad
     self.callback = callback
     self.unkillable = unkillable
@@ -216,11 +218,12 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, onroad=True, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, onroad=True, early_onroad = False, offroad=False, callback=None, unkillable=False, sigkill=False, watchdog_max_dt=None):
     self.name = name
     self.module = module
     self.enabled = enabled
     self.onroad = onroad
+    self.early_onroad = early_onroad
     self.offroad = offroad
     self.callback = callback
     self.unkillable = unkillable
@@ -289,7 +292,7 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, earlyStarted: bool, params=None, CP: car.CarParams=None,
                    not_run: Optional[List[str]]=None) -> None:
   if not_run is None:
     not_run = []
@@ -299,6 +302,7 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
     run = any((
       p.offroad and not started,
       p.onroad and started,
+      p.early_onroad and earlyStarted,
     ))
     if p.callback is not None and None not in (params, CP):
       run = run or p.callback(started, params, CP)
