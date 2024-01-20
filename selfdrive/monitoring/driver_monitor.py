@@ -295,6 +295,12 @@ class DriverStatus():
       self.awareness_active = 1.
       self.awareness_passive = 1.
       return
+    
+    # TODO: BAD
+    self.awareness = 1.
+    self.awareness_active = 1.
+    self.awareness_passive = 1.
+    return
 
     driver_attentive = self.driver_distraction_filter.x < 0.37
     awareness_prev = self.awareness
