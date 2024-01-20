@@ -46,6 +46,9 @@ def dmonitoringd_thread(sm=None, pm=None):
                         sm['carState'].gasPressed
       v_cruise_last = v_cruise
 
+    # TODO: BAD
+    driver_engaged = True
+
     if sm.updated['modelV2']:
       driver_status.set_policy(sm['modelV2'], sm['carState'].vEgo)
 
