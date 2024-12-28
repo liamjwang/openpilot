@@ -369,6 +369,9 @@ class DriverMonitoring:
 
 
   def get_state_packet(self, valid=True):
+    self._reset_awareness()
+    self.driver_distracted = False
+    
     # build driverMonitoringState packet
     dat = messaging.new_message('driverMonitoringState', valid=valid)
     dat.driverMonitoringState = {
