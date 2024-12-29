@@ -131,7 +131,7 @@ def manager_thread() -> None:
   pm = messaging.PubMaster(['managerState'])
 
   write_onroad_params(False, params)
-  ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
+  ensure_running(managed_processes.values(), False, False, params=params, CP=sm['carParams'], not_run=ignore)
 
   started_prev = False
 
@@ -140,7 +140,9 @@ def manager_thread() -> None:
 
     started = sm['deviceState'].started
 
+    new_started = False
     if started and not started_prev:
+      new_started = True
       params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
     elif not started and started_prev:
       params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
@@ -151,7 +153,10 @@ def manager_thread() -> None:
 
     started_prev = started
 
-    ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
+    if new_started:
+      started = False
+
+    ensure_running(managed_processes.values(), started, new_started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("{}{}\u001b[0m".format("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)

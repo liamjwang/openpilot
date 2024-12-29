@@ -273,14 +273,14 @@ class DaemonProcess(ManagerProcess):
     pass
 
 
-def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
+def ensure_running(procs: ValuesView[ManagerProcess], started: bool, new_started: bool, params=None, CP: car.CarParams=None,
                    not_run: list[str] | None=None) -> list[ManagerProcess]:
   if not_run is None:
     not_run = []
 
   running = []
   for p in procs:
-    if p.enabled and p.name not in not_run and p.should_run(started, params, CP):
+    if p.enabled and p.name not in not_run and p.should_run(started, new_started, params, CP):
       running.append(p)
     else:
       p.stop(block=False)
