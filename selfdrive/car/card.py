@@ -170,17 +170,17 @@ class Car:
 
     initialized = (not any(e.name == EventName.controlsInitializing for e in self.sm['onroadEvents']) and
                    self.sm.seen['onroadEvents'])
-    if not self.CP.passive and initialized:
+    if not self.CP.passive:
+    # if not self.CP.passive and initialized:
       print("liam card controls_update ", time.monotonic())
       self.controls_update(CS, self.sm['carControl'])
     else:
       if self.CP.passive:
         print("liam card passive ", time.monotonic())
       if not initialized:
-        print("liam card not initialized ", time.monotonic())
         for e in self.sm['onroadEvents']:
           if e.name == EventName.controlsInitializing:
-            print("liam card controls initializing with event ", time.monotonic(), e)
+            print("liam card controls initializing ", time.monotonic())
         if not self.sm.seen['onroadEvents']:
           print("liam card no onroad events ", time.monotonic())
 
