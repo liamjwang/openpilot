@@ -173,6 +173,16 @@ class Car:
     if not self.CP.passive and initialized:
       print("liam card controls_update ", time.monotonic())
       self.controls_update(CS, self.sm['carControl'])
+    else:
+      if self.CP.passive:
+        print("liam card passive ", time.monotonic())
+      if not initialized:
+        print("liam card not initialized ", time.monotonic())
+        for e in self.sm['onroadEvents']:
+          if e.name == EventName.controlsInitializing:
+            print("liam card controls initializing with event ", time.monotonic(), e)
+        if not self.sm.seen['onroadEvents']:
+          print("liam card no onroad events ", time.monotonic())
 
     self.initialized_prev = initialized
     self.CS_prev = CS.as_reader()
