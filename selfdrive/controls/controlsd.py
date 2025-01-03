@@ -60,8 +60,6 @@ ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 class Controls:
   def __init__(self, CI=None):
-    print("liam controlsd __init__ ", time.monotonic())
-    self.first_step = True
     self.params = Params()
 
     if CI is None:
@@ -813,10 +811,6 @@ class Controls:
     self.publish_logs(CS, start_time, CC, lac_log)
 
     self.CS_prev = CS
-
-    if self.first_step:
-      self.first_step = False
-      print("liam controlsd first step done ", time.monotonic())
 
   def read_personality_param(self):
     try:

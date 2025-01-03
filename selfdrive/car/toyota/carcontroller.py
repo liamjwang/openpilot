@@ -1,4 +1,4 @@
-import time
+# import time
 from cereal import car
 from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_can_msg

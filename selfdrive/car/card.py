@@ -25,9 +25,6 @@ class Car:
   CI: CarInterfaceBase
 
   def __init__(self, CI=None):
-    self.first_step = True
-    print("liam card __init__ ", time.monotonic())
-    
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
@@ -153,7 +150,6 @@ class Car:
       self.params.put_bool_nonblocking("ControlsReady", True)
 
     if self.sm.all_alive(['carControl']):
-      # print("liam carcontrol alive ", time.monotonic())
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
@@ -173,22 +169,9 @@ class Car:
     if not self.CP.passive:
     # if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'])
-    else:
-      if self.CP.passive:
-        print("liam card passive ", time.monotonic())
-      if not initialized:
-        for e in self.sm['onroadEvents']:
-          if e.name == EventName.controlsInitializing:
-            print("liam card controls initializing ", time.monotonic())
-        if not self.sm.seen['onroadEvents']:
-          print("liam card no onroad events ", time.monotonic())
 
     self.initialized_prev = initialized
     self.CS_prev = CS.as_reader()
-
-    if self.first_step:
-      self.first_step = False
-      print("liam card first step done ", time.monotonic())
 
   def card_thread(self):
     while True:

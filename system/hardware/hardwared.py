@@ -339,7 +339,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsEngaged", False)
       engaged_prev = False
-      print("liam should_start changed ", should_start, " ", time.monotonic())
       HARDWARE.set_power_save(not should_start)
 
     if sm.updated['controlsState']:

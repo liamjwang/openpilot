@@ -125,5 +125,4 @@ class PowerMonitoring:
     should_shutdown &= offroad_time > DELAY_SHUTDOWN_TIME_S
     should_shutdown |= self.params.get_bool("ForcePowerDown")
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
-    # return should_shutdown
-    return False
+    return should_shutdown

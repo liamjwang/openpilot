@@ -135,8 +135,6 @@ def manager_thread() -> None:
 
   started_prev = False
 
-  delay_tick = 0
-
   while True:
     sm.update(1000)
 
@@ -145,7 +143,6 @@ def manager_thread() -> None:
     new_started = False
     if started and not started_prev:
       new_started = True
-      delay_tick = 10
       params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
     elif not started and started_prev:
       params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
@@ -156,17 +153,8 @@ def manager_thread() -> None:
 
     started_prev = started
 
-    # if new_started:
-    #   started = False
-
-    if delay_tick > 0:
-      if not started:
-        delay_tick = 0
-        new_started = False
-      else:
-        started = False
-        delay_tick -= 1
-        new_started = True
+    if new_started:
+      started = False
 
     ensure_running(managed_processes.values(), started, new_started, params=params, CP=sm['carParams'], not_run=ignore)
 
