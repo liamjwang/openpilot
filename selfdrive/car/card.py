@@ -25,6 +25,9 @@ class Car:
   CI: CarInterfaceBase
 
   def __init__(self, CI=None):
+    self.first_step = True
+    print("liam card __init__ ", time.monotonic())
+    
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
@@ -171,6 +174,10 @@ class Car:
 
     self.initialized_prev = initialized
     self.CS_prev = CS.as_reader()
+
+    if self.first_step:
+      self.first_step = False
+      print("liam card first step done ", time.monotonic())
 
   def card_thread(self):
     while True:
