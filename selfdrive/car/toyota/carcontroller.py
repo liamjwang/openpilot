@@ -1,3 +1,4 @@
+import time
 from cereal import car
 from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_can_msg
@@ -160,6 +161,8 @@ class CarController(CarControllerBase):
         can_sends.append(toyotacan.create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
+    if self.CP.enableDsu:
+      print("liam static dsu msgs ", time.monotonic())
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
       if self.frame % fr_step == 0 and self.CP.enableDsu and self.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
