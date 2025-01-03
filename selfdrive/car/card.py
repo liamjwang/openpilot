@@ -153,7 +153,7 @@ class Car:
       self.params.put_bool_nonblocking("ControlsReady", True)
 
     if self.sm.all_alive(['carControl']):
-      print("liam carcontrol alive ", time.monotonic())
+      # print("liam carcontrol alive ", time.monotonic())
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)

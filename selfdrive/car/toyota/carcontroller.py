@@ -161,9 +161,9 @@ class CarController(CarControllerBase):
         can_sends.append(toyotacan.create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
-    print("liam carcontroller update ", time.monotonic())
-    if self.CP.enableDsu:
-      print("liam static dsu msgs ", time.monotonic())
+    # print("liam carcontroller update ", time.monotonic())
+    # if self.CP.enableDsu:
+    #   print("liam static dsu msgs ", time.monotonic())
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
       if self.frame % fr_step == 0 and self.CP.enableDsu and self.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
