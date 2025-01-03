@@ -161,6 +161,7 @@ class CarController(CarControllerBase):
         can_sends.append(toyotacan.create_fcw_command(self.packer, fcw_alert))
 
     # *** static msgs ***
+    print("liam carcontroller update ", time.monotonic())
     if self.CP.enableDsu:
       print("liam static dsu msgs ", time.monotonic())
     for addr, cars, bus, fr_step, vl in STATIC_DSU_MSGS:
