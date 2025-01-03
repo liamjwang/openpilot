@@ -172,7 +172,6 @@ class Car:
                    self.sm.seen['onroadEvents'])
     if not self.CP.passive:
     # if not self.CP.passive and initialized:
-      print("liam card controls_update ", time.monotonic())
       self.controls_update(CS, self.sm['carControl'])
     else:
       if self.CP.passive:
