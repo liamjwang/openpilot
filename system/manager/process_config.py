@@ -7,42 +7,39 @@ from openpilot.system.manager.process import PythonProcess, NativeProcess, Daemo
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
-def driverview(started: bool, new_started: bool, params: Params, CP: car.CarParams) -> bool:
+def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
 
-def notcar(started: bool, new_started: bool, params: Params, CP: car.CarParams) -> bool:
+def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and CP.notCar
 
-def iscar(started: bool, new_started: bool, params: Params, CP: car.CarParams) -> bool:
+def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not CP.notCar
 
-def logging(started: bool, new_started: bool, params, CP: car.CarParams) -> bool:
+def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
 
-def ublox(started: bool, new_started: bool, params, CP: car.CarParams) -> bool:
+def ublox(started, params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
-def qcomgps(started: bool, new_started: bool, params, CP: car.CarParams) -> bool:
+def qcomgps(started, params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
-def always_run(started: bool, new_started: bool, params, CP: car.CarParams) -> bool:
+def always_run(started, params, CP: car.CarParams) -> bool:
   return True
 
-def only_onroad(started: bool, new_started: bool, params, CP: car.CarParams) -> bool:
+def only_onroad(started: bool, params, CP: car.CarParams) -> bool:
   return started
 
-def only_offroad(started: bool, new_started: bool, params, CP: car.CarParams) -> bool:
+def only_offroad(started, params, CP: car.CarParams) -> bool:
   return not started
-
-def early_started(started: bool, new_started: bool, params, CP: car.CarParams) -> bool:
-  return new_started or started
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
@@ -66,8 +63,8 @@ procs = [
   NativeProcess("pandad", "selfdrive/pandad", ["./pandad"], always_run, enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
   PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
-  PythonProcess("controlsd", "selfdrive.controls.controlsd", early_started),
-  PythonProcess("card", "selfdrive.car.card", early_started),
+  PythonProcess("controlsd", "selfdrive.controls.controlsd", only_onroad),
+  PythonProcess("card", "selfdrive.car.card", only_onroad),
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
   PythonProcess("qcomgpsd", "system.qcomgpsd.qcomgpsd", qcomgps, enabled=TICI),
